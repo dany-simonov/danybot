@@ -1,9 +1,11 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Logo } from '@/components/ui/logo';
+import { Footer } from '@/components/ui/footer';
 import { SettingsDialog } from '@/components/settings/SettingsDialog';
 import { FileUpload } from './FileUpload';
 import { Send, Bot, User, Settings, LogOut } from 'lucide-react';
@@ -85,7 +87,6 @@ export const ChatInterface = ({ userType, onLogout }: ChatInterfaceProps) => {
     setSelectedFiles([]);
     setIsTyping(true);
 
-    // Симуляция ответа ИИ
     setTimeout(() => {
       const botResponse: Message = {
         id: (Date.now() + 1).toString(),
@@ -108,25 +109,21 @@ export const ChatInterface = ({ userType, onLogout }: ChatInterfaceProps) => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col relative overflow-hidden bg-black cyber-grid">
-      {/* Неоновый фон */}
-      <div className="absolute inset-0 bg-gradient-to-br from-black via-purple-900/20 to-black"></div>
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(139,92,246,0.1),transparent_70%)]"></div>
-      
-      {/* Заголовок */}
-      <div className="bg-black/80 neon-border border-b p-4 relative z-10">
+    <div className="min-h-screen flex flex-col bg-zinc-950">
+      {/* Header */}
+      <div className="glass-effect border-b border-white/10 p-4 sticky top-0 z-50">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <Logo size="sm" />
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-3">
             <div className="text-right mr-4">
-              <p className="text-sm text-neon-cyan font-mono">
+              <p className="text-sm text-blue-400 font-medium">
                 {userType === 'premium' ? '✨ Премиум режим' : '🔒 Базовый режим'}
               </p>
             </div>
             <Button 
               size="sm" 
               variant="ghost" 
-              className="text-neon-cyan hover:bg-neon-cyan/10 neon-border"
+              className="text-gray-300 hover:text-white hover:bg-white/10 smooth-transition"
               onClick={() => setSettingsOpen(true)}
             >
               <Settings className="w-4 h-4" />
@@ -134,7 +131,7 @@ export const ChatInterface = ({ userType, onLogout }: ChatInterfaceProps) => {
             <Button 
               size="sm" 
               variant="ghost" 
-              className="text-neon-purple hover:bg-neon-purple/10 neon-border"
+              className="text-gray-300 hover:text-white hover:bg-white/10 smooth-transition"
               onClick={onLogout}
             >
               <LogOut className="w-4 h-4" />
@@ -143,9 +140,9 @@ export const ChatInterface = ({ userType, onLogout }: ChatInterfaceProps) => {
         </div>
       </div>
 
-      {/* Чат */}
-      <div className="flex-1 overflow-y-auto p-4 relative z-10">
-        <div className="max-w-4xl mx-auto space-y-4">
+      {/* Chat Area */}
+      <div className="flex-1 overflow-y-auto p-6">
+        <div className="max-w-4xl mx-auto space-y-6">
           {messages.map((message) => (
             <div
               key={message.id}
@@ -153,35 +150,34 @@ export const ChatInterface = ({ userType, onLogout }: ChatInterfaceProps) => {
                 message.sender === 'user' ? 'flex-row-reverse space-x-reverse' : ''
               }`}
             >
-              <Avatar className={`w-8 h-8 ${
+              <Avatar className={`w-10 h-10 ${
                 message.sender === 'bot' 
-                  ? 'bg-gradient-to-r from-neon-purple to-neon-cyan neon-glow' 
-                  : 'bg-gradient-to-r from-neon-green to-neon-cyan neon-glow'
-              }`}>
-                <AvatarFallback className="text-black font-bold">
-                  {message.sender === 'bot' ? <Bot className="w-4 h-4" /> : <User className="w-4 h-4" />}
+                  ? 'bg-gradient-to-r from-blue-500 to-purple-500' 
+                  : 'bg-gradient-to-r from-green-500 to-cyan-500'
+              } shadow-lg`}>
+                <AvatarFallback className="text-white font-bold">
+                  {message.sender === 'bot' ? <Bot className="w-5 h-5" /> : <User className="w-5 h-5" />}
                 </AvatarFallback>
               </Avatar>
               
               <div className="flex flex-col max-w-[80%]">
-                <Card className={`p-3 ${
+                <Card className={`p-4 ${
                   message.sender === 'user'
-                    ? 'bg-gradient-to-r from-neon-cyan to-blue-400 text-black neon-glow'
-                    : 'bg-black/80 neon-border text-white'
-                }`}>
-                  <p className={`text-sm ${message.sender === 'user' ? 'font-bold' : 'font-mono'}`}>
+                    ? 'bg-gradient-to-r from-blue-500 to-cyan-400 text-white shadow-lg'
+                    : 'glass-card text-white'
+                } rounded-2xl`}>
+                  <p className="text-sm leading-relaxed">
                     {message.content}
                   </p>
-                  <p className={`text-xs opacity-70 mt-1 ${message.sender === 'user' ? 'text-black/70' : 'text-gray-400'} font-mono`}>
+                  <p className={`text-xs opacity-70 mt-2 ${message.sender === 'user' ? 'text-white/70' : 'text-gray-400'}`}>
                     {message.timestamp.toLocaleTimeString()}
                   </p>
                 </Card>
                 
-                {/* Отображение файлов */}
                 {message.files && message.files.length > 0 && (
                   <div className="mt-2 space-y-1">
                     {message.files.map((file, index) => (
-                      <div key={index} className="text-xs text-neon-cyan font-mono bg-black/50 neon-border rounded px-2 py-1">
+                      <div key={index} className="text-xs text-blue-400 glass-card rounded-lg px-3 py-2">
                         📎 {file.name}
                       </div>
                     ))}
@@ -193,16 +189,16 @@ export const ChatInterface = ({ userType, onLogout }: ChatInterfaceProps) => {
           
           {isTyping && (
             <div className="flex items-start space-x-3 animate-fade-in">
-              <Avatar className="w-8 h-8 bg-gradient-to-r from-neon-purple to-neon-cyan neon-glow">
-                <AvatarFallback className="text-black font-bold">
-                  <Bot className="w-4 h-4" />
+              <Avatar className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 shadow-lg">
+                <AvatarFallback className="text-white font-bold">
+                  <Bot className="w-5 h-5" />
                 </AvatarFallback>
               </Avatar>
-              <Card className="bg-black/80 neon-border p-3">
+              <Card className="glass-card p-4 rounded-2xl">
                 <div className="flex space-x-1">
-                  <div className="w-2 h-2 bg-neon-purple rounded-full animate-neon-pulse"></div>
-                  <div className="w-2 h-2 bg-neon-cyan rounded-full animate-neon-pulse" style={{ animationDelay: '0.2s' }}></div>
-                  <div className="w-2 h-2 bg-neon-green rounded-full animate-neon-pulse" style={{ animationDelay: '0.4s' }}></div>
+                  <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
+                  <div className="w-2 h-2 bg-purple-400 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
+                  <div className="w-2 h-2 bg-cyan-400 rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></div>
                 </div>
               </Card>
             </div>
@@ -212,8 +208,8 @@ export const ChatInterface = ({ userType, onLogout }: ChatInterfaceProps) => {
         </div>
       </div>
 
-      {/* Поле ввода */}
-      <div className="bg-black/80 neon-border border-t p-4 relative z-10">
+      {/* Input Area */}
+      <div className="glass-effect border-t border-white/10 p-4 sticky bottom-0">
         <div className="max-w-4xl mx-auto">
           <FileUpload
             userType={userType}
@@ -222,32 +218,32 @@ export const ChatInterface = ({ userType, onLogout }: ChatInterfaceProps) => {
             onRemoveFile={handleRemoveFile}
           />
           
-          <div className="flex space-x-2 mt-2">
+          <div className="flex space-x-3 mt-3">
             <Input
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
               placeholder="Напишите сообщение..."
-              className="flex-1 bg-black/50 neon-border text-white placeholder:text-gray-500 font-mono"
+              className="flex-1 bg-zinc-800/50 border-white/20 text-white placeholder:text-gray-500 focus:border-blue-400 smooth-transition rounded-xl"
               disabled={isTyping}
             />
             <Button 
               onClick={sendMessage}
               disabled={(!inputValue.trim() && selectedFiles.length === 0) || isTyping}
-              className="bg-gradient-to-r from-neon-purple to-neon-cyan hover:from-neon-purple/80 hover:to-neon-cyan/80 text-black font-bold neon-glow"
+              className="bg-gradient-to-r from-blue-500 to-cyan-400 hover:from-blue-600 hover:to-cyan-500 text-white shadow-lg apple-hover smooth-transition rounded-xl px-6"
             >
               <Send className="w-4 h-4" />
             </Button>
           </div>
           
           {userType === 'basic' && (
-            <p className="text-xs text-gray-400 mt-2 font-mono">
+            <p className="text-xs text-gray-500 mt-2">
               Базовый режим: ограниченные возможности ИИ
             </p>
           )}
           
           {userType === 'premium' && (
-            <p className="text-xs text-neon-cyan mt-2 font-mono">
+            <p className="text-xs text-blue-400 mt-2">
               Премиум режим: 130+ моделей, загрузка файлов
             </p>
           )}

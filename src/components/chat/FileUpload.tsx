@@ -21,11 +21,11 @@ export const FileUpload = ({ userType, onFileSelect, selectedFiles, onRemoveFile
 
   const getFileIcon = (file: File) => {
     if (file.type.startsWith('image/')) {
-      return <Image className="w-4 h-4 text-neon-purple" />;
+      return <Image className="w-4 h-4 text-blue-400" />;
     } else if (file.type.includes('pdf') || file.type.includes('document')) {
-      return <FileText className="w-4 h-4 text-neon-cyan" />;
+      return <FileText className="w-4 h-4 text-purple-400" />;
     }
-    return <File className="w-4 h-4 text-neon-green" />;
+    return <File className="w-4 h-4 text-green-400" />;
   };
 
   const formatFileSize = (bytes: number) => {
@@ -42,7 +42,7 @@ export const FileUpload = ({ userType, onFileSelect, selectedFiles, onRemoveFile
         variant="ghost" 
         size="sm"
         disabled
-        className="text-gray-500 cursor-not-allowed"
+        className="text-gray-500 cursor-not-allowed hover:bg-transparent"
         title="Загрузка файлов доступна только в премиум версии"
       >
         <Paperclip className="w-4 h-4" />
@@ -51,7 +51,7 @@ export const FileUpload = ({ userType, onFileSelect, selectedFiles, onRemoveFile
   }
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-3">
       <input
         ref={fileInputRef}
         type="file"
@@ -65,7 +65,7 @@ export const FileUpload = ({ userType, onFileSelect, selectedFiles, onRemoveFile
         variant="ghost" 
         size="sm"
         onClick={() => fileInputRef.current?.click()}
-        className="text-neon-cyan hover:bg-neon-cyan/10 neon-border"
+        className="text-blue-400 hover:text-blue-300 hover:bg-blue-400/10 smooth-transition"
         title="Загрузить файлы (PDF, изображения, аудио, видео)"
       >
         <Paperclip className="w-4 h-4" />
@@ -74,17 +74,17 @@ export const FileUpload = ({ userType, onFileSelect, selectedFiles, onRemoveFile
       {selectedFiles.length > 0 && (
         <div className="max-w-md space-y-2">
           {selectedFiles.map((file, index) => (
-            <Card key={index} className="bg-black/50 neon-border p-2 flex items-center gap-2">
+            <Card key={index} className="glass-card p-3 flex items-center gap-3">
               {getFileIcon(file)}
               <div className="flex-1 min-w-0">
-                <p className="text-sm text-white truncate font-mono">{file.name}</p>
-                <p className="text-xs text-gray-400 font-mono">{formatFileSize(file.size)}</p>
+                <p className="text-sm text-white truncate">{file.name}</p>
+                <p className="text-xs text-gray-400">{formatFileSize(file.size)}</p>
               </div>
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => onRemoveFile(index)}
-                className="text-red-400 hover:bg-red-400/10 h-6 w-6 p-0"
+                className="text-red-400 hover:bg-red-400/10 h-6 w-6 p-0 smooth-transition"
               >
                 <X className="w-3 h-3" />
               </Button>

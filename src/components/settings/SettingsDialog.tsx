@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -15,7 +14,7 @@ interface SettingsDialogProps {
 
 export const SettingsDialog = ({ open, onOpenChange, onLogout }: SettingsDialogProps) => {
   const [settings, setSettings] = useState({
-    theme: 'neon',
+    theme: 'apple-dark',
     animations: true,
     sounds: false,
     notifications: true,
@@ -67,11 +66,11 @@ export const SettingsDialog = ({ open, onOpenChange, onLogout }: SettingsDialogP
   ];
 
   const categoryColors = {
-    text: 'from-neon-cyan to-blue-400',
-    code: 'from-neon-green to-emerald-400',
-    image: 'from-neon-purple to-pink-400',
-    audio: 'from-orange-400 to-red-400',
-    research: 'from-indigo-400 to-neon-purple'
+    text: 'from-blue-500 to-cyan-400',
+    code: 'from-green-500 to-emerald-400',
+    image: 'from-purple-500 to-pink-400',
+    audio: 'from-orange-500 to-red-400',
+    research: 'from-indigo-500 to-purple-500'
   };
 
   const categoryEmojis = {
@@ -84,23 +83,23 @@ export const SettingsDialog = ({ open, onOpenChange, onLogout }: SettingsDialogP
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl bg-black/95 neon-border text-white font-mono">
+      <DialogContent className="max-w-2xl glass-effect text-white border-white/20">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-xl text-neon-cyan neon-text">
+          <DialogTitle className="flex items-center gap-3 text-xl text-white">
             <Settings className="w-5 h-5" />
             Настройки
           </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-6">
-          {/* Выбор ИИ модели */}
+          {/* AI Model Selection */}
           <div>
-            <Label className="text-lg font-semibold mb-3 block text-neon-purple neon-text">ИИ Модель</Label>
+            <Label className="text-lg font-semibold mb-3 block text-blue-400">ИИ Модель</Label>
             <Select value={settings.aiModel} onValueChange={(value) => setSettings({...settings, aiModel: value})}>
-              <SelectTrigger className="bg-black/50 neon-border text-white font-mono">
+              <SelectTrigger className="bg-zinc-800/50 border-white/20 text-white">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent className="bg-black neon-border text-white font-mono max-h-64">
+              <SelectContent className="bg-zinc-900 border-white/20 text-white max-h-64">
                 {Object.entries(
                   aiModels.reduce((acc, model) => {
                     if (!acc[model.category]) acc[model.category] = [];
@@ -113,7 +112,7 @@ export const SettingsDialog = ({ open, onOpenChange, onLogout }: SettingsDialogP
                       {categoryEmojis[category as keyof typeof categoryEmojis]} {category.toUpperCase()} ({models.length})
                     </div>
                     {models.map((model) => (
-                      <SelectItem key={model.id} value={model.id} className="hover:bg-white/10 font-mono">
+                      <SelectItem key={model.id} value={model.id} className="hover:bg-white/10">
                         <div className="flex items-center gap-2">
                           {model.icon}
                           {model.name}
@@ -126,25 +125,25 @@ export const SettingsDialog = ({ open, onOpenChange, onLogout }: SettingsDialogP
             </Select>
           </div>
 
-          {/* Основные настройки */}
-          <div className="grid grid-cols-2 gap-4">
+          {/* Settings Grid */}
+          <div className="grid grid-cols-2 gap-6">
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <Label className="text-neon-cyan">Анимации</Label>
+                <Label className="text-white">Анимации</Label>
                 <Switch
                   checked={settings.animations}
                   onCheckedChange={(checked) => setSettings({...settings, animations: checked})}
                 />
               </div>
               <div className="flex items-center justify-between">
-                <Label className="text-neon-green">Звуки</Label>
+                <Label className="text-white">Звуки</Label>
                 <Switch
                   checked={settings.sounds}
                   onCheckedChange={(checked) => setSettings({...settings, sounds: checked})}
                 />
               </div>
               <div className="flex items-center justify-between">
-                <Label className="text-neon-purple">Уведомления</Label>
+                <Label className="text-white">Уведомления</Label>
                 <Switch
                   checked={settings.notifications}
                   onCheckedChange={(checked) => setSettings({...settings, notifications: checked})}
@@ -154,26 +153,26 @@ export const SettingsDialog = ({ open, onOpenChange, onLogout }: SettingsDialogP
             
             <div className="space-y-4">
               <div>
-                <Label className="mb-2 block text-neon-cyan">Тема</Label>
+                <Label className="mb-2 block text-white">Тема</Label>
                 <Select value={settings.theme} onValueChange={(value) => setSettings({...settings, theme: value})}>
-                  <SelectTrigger className="bg-black/50 neon-border text-white font-mono">
+                  <SelectTrigger className="bg-zinc-800/50 border-white/20 text-white">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent className="bg-black neon-border text-white font-mono">
-                    <SelectItem value="neon">Неон</SelectItem>
-                    <SelectItem value="cyber">Кибер</SelectItem>
-                    <SelectItem value="matrix">Матрица</SelectItem>
+                  <SelectContent className="bg-zinc-900 border-white/20 text-white">
+                    <SelectItem value="apple-dark">Apple Dark</SelectItem>
+                    <SelectItem value="apple-light">Apple Light</SelectItem>
+                    <SelectItem value="system">Система</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               
               <div>
-                <Label className="mb-2 block text-neon-green">Размер шрифта</Label>
+                <Label className="mb-2 block text-white">Размер шрифта</Label>
                 <Select value={settings.fontSize} onValueChange={(value) => setSettings({...settings, fontSize: value})}>
-                  <SelectTrigger className="bg-black/50 neon-border text-white font-mono">
+                  <SelectTrigger className="bg-zinc-800/50 border-white/20 text-white">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent className="bg-black neon-border text-white font-mono">
+                  <SelectContent className="bg-zinc-900 border-white/20 text-white">
                     <SelectItem value="small">Маленький</SelectItem>
                     <SelectItem value="medium">Средний</SelectItem>
                     <SelectItem value="large">Большой</SelectItem>
@@ -183,42 +182,42 @@ export const SettingsDialog = ({ open, onOpenChange, onLogout }: SettingsDialogP
             </div>
           </div>
 
-          {/* Статистика моделей */}
-          <div className="bg-black/50 neon-border rounded p-4">
-            <h3 className="text-lg font-semibold text-neon-purple neon-text mb-3">Доступные модели</h3>
+          {/* Models Stats */}
+          <div className="glass-card rounded-xl p-4 border border-white/10">
+            <h3 className="text-lg font-semibold text-blue-400 mb-3">Доступные модели</h3>
             <div className="grid grid-cols-2 gap-2 text-sm">
-              <div className="text-neon-cyan">📝 Текст: 41 модель</div>
-              <div className="text-neon-green">💻 Код: 35 агентов</div>
-              <div className="text-neon-purple">🖼️ Изображения: 28 моделей</div>
+              <div className="text-blue-400">📝 Текст: 41 модель</div>
+              <div className="text-green-400">💻 Код: 35 агентов</div>
+              <div className="text-purple-400">🖼️ Изображения: 28 моделей</div>
               <div className="text-orange-400">🔊 Аудио: 18 голосов</div>
               <div className="text-indigo-400">🔍 Исследования: 8 моделей</div>
-              <div className="text-neon-cyan">🌀 Мультимодальные: 4 модели</div>
+              <div className="text-cyan-400">🌀 Мультимодальные: 4 модели</div>
             </div>
             <div className="mt-3 text-center">
-              <span className="text-neon-purple neon-text font-bold">ВСЕГО: 130+ моделей</span>
+              <span className="text-blue-400 font-bold">ВСЕГО: 130+ моделей</span>
             </div>
           </div>
 
-          {/* Кнопки действий */}
+          {/* Action Buttons */}
           <div className="flex justify-between pt-4 border-t border-white/20">
             <Button 
               variant="outline" 
               onClick={() => onOpenChange(false)}
-              className="neon-border text-white hover:bg-white/10 font-mono"
+              className="border-white/20 text-white hover:bg-white/10 smooth-transition"
             >
               Отмена
             </Button>
-            <div className="flex gap-2">
+            <div className="flex gap-3">
               <Button 
                 variant="destructive" 
                 onClick={onLogout}
-                className="bg-red-500/20 text-red-400 hover:bg-red-500/30 neon-border font-mono"
+                className="bg-red-500/20 text-red-400 hover:bg-red-500/30 border-red-500/30 smooth-transition"
               >
                 Выйти
               </Button>
               <Button 
                 onClick={() => onOpenChange(false)}
-                className="bg-gradient-to-r from-neon-purple to-neon-cyan hover:from-neon-purple/80 hover:to-neon-cyan/80 text-black font-bold neon-glow"
+                className="bg-gradient-to-r from-blue-500 to-cyan-400 hover:from-blue-600 hover:to-cyan-500 text-white font-semibold apple-hover smooth-transition"
               >
                 Сохранить
               </Button>
