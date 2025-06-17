@@ -21,15 +21,18 @@ export const Logo = ({ size = 'md', className = '' }: LogoProps) => {
 
   return (
     <div className={`flex items-center space-x-3 ${className}`}>
-      <div className={`${sizeClasses[size]} bg-gradient-to-br from-purple-500 via-blue-500 to-emerald-500 rounded-xl shadow-lg flex items-center justify-center relative overflow-hidden`}>
-        <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent rounded-xl"></div>
-        <span className="text-white font-bold text-xl relative z-10">D</span>
+      <div className={`${sizeClasses[size]} bg-black border-2 border-neon-purple rounded-lg neon-glow relative overflow-hidden`}>
+        <div className="absolute inset-0 bg-gradient-to-br from-neon-purple/20 to-transparent"></div>
+        <div className="absolute top-0 left-0 w-1 h-full bg-neon-cyan animate-cyber-scan"></div>
+        <span className="text-neon-purple font-bold text-xl relative z-10 flex items-center justify-center h-full neon-text">
+          D
+        </span>
       </div>
       <div className="flex flex-col">
-        <span className={`font-bold bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent ${textSizeClasses[size]}`}>
+        <span className={`font-bold neon-text ${textSizeClasses[size]}`}>
           DanyBot
         </span>
-        <span className="text-xs text-gray-400 -mt-1">by Симонов Данил</span>
+        <span className="text-xs text-neon-cyan -mt-1 font-mono">by Симонов Данил</span>
       </div>
     </div>
   );
