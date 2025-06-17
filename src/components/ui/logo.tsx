@@ -28,10 +28,10 @@ export const Logo = ({ size = 'md', className = '' }: LogoProps) => {
         </span>
       </div>
       <div className="flex flex-col">
-        <span className={`font-semibold text-white ${textSizeClasses[size]}`}>
+        <span className={`font-semibold text-foreground ${textSizeClasses[size]}`}>
           DanyBot
         </span>
-        <span className="text-xs text-gray-400 -mt-1">by Симонов Данил</span>
+        <span className="text-xs text-muted-foreground -mt-1">by Симонов Даниил</span>
       </div>
     </div>
   );
