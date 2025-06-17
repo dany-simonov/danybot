@@ -4,11 +4,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Logo } from '@/components/ui/logo';
+import { SettingsDialog } from '@/components/settings/SettingsDialog';
 import { Send, Bot, User, Settings, LogOut } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 
 interface ChatInterfaceProps {
   userType: 'basic' | 'premium';
+  onLogout: () => void;
 }
 
 interface Message {
@@ -18,7 +21,7 @@ interface Message {
   timestamp: Date;
 }
 
-export const ChatInterface = ({ userType }: ChatInterfaceProps) => {
+export const ChatInterface = ({ userType, onLogout }: ChatInterfaceProps) => {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
@@ -29,6 +32,7 @@ export const ChatInterface = ({ userType }: ChatInterfaceProps) => {
   ]);
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -88,28 +92,35 @@ export const ChatInterface = ({ userType }: ChatInterfaceProps) => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col relative overflow-hidden">
+      {/* Анимированный фон */}
+      <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-purple-900/30 to-slate-900 animate-gradient-x"></div>
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(120,119,198,0.1),transparent_70%)]"></div>
+      
       {/* Заголовок */}
-      <div className="bg-white/10 backdrop-blur-lg border-b border-white/10 p-4">
+      <div className="bg-white/5 backdrop-blur-lg border-b border-white/10 p-4 relative z-10">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <Avatar className="w-10 h-10 bg-gradient-to-r from-purple-500 to-blue-500">
-              <AvatarFallback className="text-white">
-                <Bot className="w-5 h-5" />
-              </AvatarFallback>
-            </Avatar>
-            <div>
-              <h1 className="text-white font-semibold">DanyBot</h1>
+          <Logo size="sm" />
+          <div className="flex items-center space-x-2">
+            <div className="text-right mr-4">
               <p className="text-sm text-gray-300">
-                {userType === 'premium' ? 'Премиум режим' : 'Базовый режим'}
+                {userType === 'premium' ? '✨ Премиум режим' : '🔒 Базовый режим'}
               </p>
             </div>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Button size="sm" variant="ghost" className="text-white hover:bg-white/10">
+            <Button 
+              size="sm" 
+              variant="ghost" 
+              className="text-white hover:bg-white/10"
+              onClick={() => setSettingsOpen(true)}
+            >
               <Settings className="w-4 h-4" />
             </Button>
-            <Button size="sm" variant="ghost" className="text-white hover:bg-white/10">
+            <Button 
+              size="sm" 
+              variant="ghost" 
+              className="text-white hover:bg-white/10"
+              onClick={onLogout}
+            >
               <LogOut className="w-4 h-4" />
             </Button>
           </div>
@@ -117,7 +128,7 @@ export const ChatInterface = ({ userType }: ChatInterfaceProps) => {
       </div>
 
       {/* Чат */}
-      <div className="flex-1 overflow-y-auto p-4">
+      <div className="flex-1 overflow-y-auto p-4 relative z-10">
         <div className="max-w-4xl mx-auto space-y-4">
           {messages.map((message) => (
             <div
@@ -171,7 +182,7 @@ export const ChatInterface = ({ userType }: ChatInterfaceProps) => {
       </div>
 
       {/* Поле ввода */}
-      <div className="bg-white/10 backdrop-blur-lg border-t border-white/10 p-4">
+      <div className="bg-white/5 backdrop-blur-lg border-t border-white/10 p-4 relative z-10">
         <div className="max-w-4xl mx-auto">
           <div className="flex space-x-2">
             <Input
@@ -197,6 +208,12 @@ export const ChatInterface = ({ userType }: ChatInterfaceProps) => {
           )}
         </div>
       </div>
+
+      <SettingsDialog 
+        open={settingsOpen}
+        onOpenChange={setSettingsOpen}
+        onLogout={onLogout}
+      />
     </div>
   );
 };
