@@ -7,63 +7,71 @@ import { Logo } from '@/components/ui/logo';
 import { SettingsDialog } from '@/components/settings/SettingsDialog';
 import { Plus, Search, MessageCircle, Settings, Trash2, Edit } from 'lucide-react';
 
+interface Message {
+  id: string;
+  content: string;
+  sender: 'user' | 'bot';
+  timestamp: Date;
+  files?: File[];
+  model?: string;
+}
+
 interface Chat {
   id: string;
   title: string;
-  timestamp: Date;
-  lastMessage: string;
+  messages: Message[];
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 interface ChatSidebarProps {
+  chats: Chat[];
   onNewChat: () => void;
   onSelectChat: (chatId: string) => void;
+  onUpdateChatTitle: (chatId: string, newTitle: string) => void;
+  onDeleteChat: (chatId: string) => void;
   currentChatId?: string;
   onLogout: () => void;
 }
 
-export const ChatSidebar = ({ onNewChat, onSelectChat, currentChatId, onLogout }: ChatSidebarProps) => {
-  const [chats, setChats] = useState<Chat[]>([
-    {
-      id: '1',
-      title: 'Добро пожаловать в DanyBot',
-      timestamp: new Date(),
-      lastMessage: 'Привет! Я DanyBot - твой персональный ИИ-ассистент...'
-    },
-    {
-      id: '2',
-      title: 'Помощь с кодом',
-      timestamp: new Date(Date.now() - 86400000),
-      lastMessage: 'Могу помочь с программированием на Python, JavaScript...'
-    },
-    {
-      id: '3',
-      title: 'Создание изображений',
-      timestamp: new Date(Date.now() - 172800000),
-      lastMessage: 'Использую 28 моделей для генерации изображений...'
-    }
-  ]);
-  
+export const ChatSidebar = ({ 
+  chats, 
+  onNewChat, 
+  onSelectChat, 
+  onUpdateChatTitle,
+  onDeleteChat,
+  currentChatId, 
+  onLogout 
+}: ChatSidebarProps) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [settingsOpen, setSettingsOpen] = useState(false);
 
   const filteredChats = chats.filter(chat =>
     chat.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    chat.lastMessage.toLowerCase().includes(searchTerm.toLowerCase())
+    chat.messages.some(msg => 
+      msg.content.toLowerCase().includes(searchTerm.toLowerCase())
+    )
   );
 
   const handleDeleteChat = (chatId: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    setChats(prev => prev.filter(chat => chat.id !== chatId));
+    if (confirm('Удалить этот чат?')) {
+      onDeleteChat(chatId);
+    }
   };
 
   const handleRenameChat = (chatId: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    const newTitle = prompt('Новое название чата:');
-    if (newTitle) {
-      setChats(prev => prev.map(chat => 
-        chat.id === chatId ? { ...chat, title: newTitle } : chat
-      ));
+    const currentChat = chats.find(chat => chat.id === chatId);
+    const newTitle = prompt('Новое название чата:', currentChat?.title);
+    if (newTitle && newTitle.trim()) {
+      onUpdateChatTitle(chatId, newTitle.trim());
     }
+  };
+
+  const getLastMessage = (chat: Chat): string => {
+    const lastUserMessage = chat.messages.filter(msg => msg.sender === 'user').pop();
+    return lastUserMessage?.content || 'Новый чат';
   };
 
   return (
@@ -110,9 +118,9 @@ export const ChatSidebar = ({ onNewChat, onSelectChat, currentChatId, onLogout }
                     <MessageCircle className="w-4 h-4 mr-2 flex-shrink-0" />
                     <h3 className="text-sm font-medium truncate">{chat.title}</h3>
                   </div>
-                  <p className="text-xs opacity-70 truncate">{chat.lastMessage}</p>
+                  <p className="text-xs opacity-70 truncate">{getLastMessage(chat)}</p>
                   <p className="text-xs opacity-50 mt-1">
-                    {chat.timestamp.toLocaleDateString()}
+                    {chat.updatedAt.toLocaleDateString()}
                   </p>
                 </div>
                 <div className="flex opacity-0 group-hover:opacity-100 transition-opacity ml-2">

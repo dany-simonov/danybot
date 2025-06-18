@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Github, Mail, MessageCircle } from 'lucide-react';
+import { Mail, MessageCircle } from 'lucide-react';
 
 export const Footer = () => {
   return (
@@ -25,20 +25,10 @@ export const Footer = () => {
               <Mail className="w-5 h-5" />
               <span>dany.ssimon2007@yandex.ru</span>
             </a>
-            
-            <a
-              href="https://github.com/dany-simonov"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center space-x-2 text-gray-300 hover:text-blue-400 smooth-transition apple-hover"
-            >
-              <Github className="w-5 h-5" />
-              <span>github.com/dany-simonov</span>
-            </a>
           </div>
           
           <div className="text-center">
-            <p className="text-gray-400 text-sm">© 2025 DanyBot. Создано с ❤️ Симоновым Данилом</p>
+            <p className="text-gray-400 text-sm">© 2025 DanyBot. Создал Симонов Даниил</p>
             <p className="text-gray-500 text-xs mt-1">Персональный ИИ-ассистент для друзей</p>
           </div>
         </div>

@@ -2,12 +2,13 @@
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Switch } from '@/components/ui/switch';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { ThemeToggle } from './ThemeToggle';
-import { Settings, Brain, Code, Image, Music, Search, Zap } from 'lucide-react';
+import { Card } from '@/components/ui/card';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Badge } from '@/components/ui/badge';
+import { LogOut, User, Bot } from 'lucide-react';
 
 interface SettingsDialogProps {
   open: boolean;
@@ -16,300 +17,216 @@ interface SettingsDialogProps {
 }
 
 export const SettingsDialog = ({ open, onOpenChange, onLogout }: SettingsDialogProps) => {
-  const [settings, setSettings] = useState({
-    theme: 'dark' as 'light' | 'dark',
-    notifications: true,
-    autoScroll: true,
-    aiModel: 'gemini-1.5-flash',
-    personalInfo: ''
-  });
+  const [personalInfo, setPersonalInfo] = useState('');
 
-  const allAiModels = [
-    // TEXT MODELS (41)
-    { id: 'gemini-1.5-flash', name: 'Gemini 1.5 Flash', category: 'text', provider: 'TeachAnything', icon: <Zap className="w-4 h-4" /> },
-    { id: 'gemini-1.5-pro', name: 'Gemini 1.5 Pro', category: 'text', provider: 'TeachAnything', icon: <Brain className="w-4 h-4" /> },
-    { id: 'command-r7b-arabic', name: 'Command R7B Arabic', category: 'text', provider: 'Cohere', icon: <Brain className="w-4 h-4" /> },
-    { id: 'command-r7b-12-2024', name: 'Command R7B 12-2024', category: 'text', provider: 'Cohere', icon: <Brain className="w-4 h-4" /> },
-    { id: 'apriel-5b-instruct', name: 'Apriel 5B Instruct', category: 'text', provider: 'LambdaChat', icon: <Brain className="w-4 h-4" /> },
-    { id: 'command-r', name: 'Command R', category: 'text', provider: 'Cohere', icon: <Brain className="w-4 h-4" /> },
-    { id: 'qwen-3-30b-a3b', name: 'Qwen 3 30B', category: 'text', provider: 'Qwen', icon: <Brain className="w-4 h-4" /> },
-    { id: 'gpt-4.1-mini', name: 'GPT-4.1 Mini', category: 'text', provider: 'OIVSCode', icon: <Brain className="w-4 h-4" /> },
-    { id: 'qwen-3-8b', name: 'Qwen 3 8B', category: 'text', provider: 'Qwen', icon: <Brain className="w-4 h-4" /> },
-    { id: 'deepseek-llama3.3-70b', name: 'DeepSeek Llama 3.3 70B', category: 'text', provider: 'LambdaChat', icon: <Brain className="w-4 h-4" /> },
-    { id: 'command-a-03-2025', name: 'Command A 03-2025', category: 'text', provider: 'Cohere', icon: <Brain className="w-4 h-4" /> },
-    { id: 'command-r-08-2024', name: 'Command R 08-2024', category: 'text', provider: 'Cohere', icon: <Brain className="w-4 h-4" /> },
-    { id: 'lfm-40b', name: 'LFM 40B', category: 'text', provider: 'LambdaChat', icon: <Brain className="w-4 h-4" /> },
-    { id: 'command-r-plus', name: 'Command R Plus', category: 'text', provider: 'Cohere', icon: <Brain className="w-4 h-4" /> },
-    { id: 'gpt-4o-mini', name: 'GPT-4o Mini', category: 'text', provider: 'OIVSCode', icon: <Brain className="w-4 h-4" /> },
-    { id: 'llama3.3-70b-instr-fp8', name: 'Llama 3.3 70B Instruct', category: 'text', provider: 'LambdaChat', icon: <Brain className="w-4 h-4" /> },
-    { id: 'qwen25-coder-32b-instr', name: 'Qwen 2.5 Coder 32B', category: 'text', provider: 'LambdaChat', icon: <Brain className="w-4 h-4" /> },
-    { id: 'qwen-3-0.6b', name: 'Qwen 3 0.6B', category: 'text', provider: 'Qwen', icon: <Brain className="w-4 h-4" /> },
-    { id: 'perplexity-sonar', name: 'Perplexity Sonar', category: 'text', provider: 'Perplexity', icon: <Search className="w-4 h-4" /> },
-    { id: 'perplexity-sonar-pro', name: 'Perplexity Sonar Pro', category: 'text', provider: 'Perplexity', icon: <Search className="w-4 h-4" /> },
-    { id: 'wewordle-gpt-4', name: 'GPT-4', category: 'text', provider: 'WeWordle', icon: <Brain className="w-4 h-4" /> },
-    { id: 'command-r-plus-08-2024', name: 'Command R Plus 08-2024', category: 'text', provider: 'Cohere', icon: <Brain className="w-4 h-4" /> },
-    { id: 'qwen-2.5', name: 'Qwen 2.5', category: 'text', provider: 'Qwen', icon: <Brain className="w-4 h-4" /> },
-    { id: 'llama3.3-70b-instr-fp8-2', name: 'Llama 3.3 70B Instruct FP8', category: 'text', provider: 'LambdaChat', icon: <Brain className="w-4 h-4" /> },
-    { id: 'yqcloud-gpt-4', name: 'GPT-4', category: 'text', provider: 'Yqcloud', icon: <Brain className="w-4 h-4" /> },
-    { id: 'free2gpt-gemini-1.5-pro', name: 'Gemini 1.5 Pro', category: 'text', provider: 'Free2GPT', icon: <Brain className="w-4 h-4" /> },
-    { id: 'qwen-3-1.7b', name: 'Qwen 3 1.7B', category: 'text', provider: 'Qwen', icon: <Brain className="w-4 h-4" /> },
-    { id: 'free2gpt-gemini-1.5-flash', name: 'Gemini 1.5 Flash', category: 'text', provider: 'Free2GPT', icon: <Brain className="w-4 h-4" /> },
-    { id: 'qwen-2.5-max', name: 'Qwen 2.5 Max', category: 'text', provider: 'Qwen', icon: <Brain className="w-4 h-4" /> },
-    { id: 'qwen-3-4b', name: 'Qwen 3 4B', category: 'text', provider: 'Qwen', icon: <Brain className="w-4 h-4" /> },
-    { id: 'qwen-2-72b', name: 'Qwen 2 72B', category: 'text', provider: 'Qwen', icon: <Brain className="w-4 h-4" /> },
-    { id: 'qwen3-32b-fp8', name: 'Qwen 3 32B FP8', category: 'text', provider: 'LambdaChat', icon: <Brain className="w-4 h-4" /> },
-    { id: 'qwen-3-235b', name: 'Qwen 3 235B', category: 'text', provider: 'Qwen', icon: <Brain className="w-4 h-4" /> },
-    { id: 'perplexity-r1-1776', name: 'R1-1776', category: 'research', provider: 'Perplexity', icon: <Search className="w-4 h-4" /> },
-    { id: 'deepseek-r1', name: 'DeepSeek R1', category: 'research', provider: 'LambdaChat', icon: <Search className="w-4 h-4" /> },
-    { id: 'qwen-3-14b', name: 'Qwen 3 14B', category: 'text', provider: 'Qwen', icon: <Brain className="w-4 h-4" /> },
-    { id: 'qwen-3-32b', name: 'Qwen 3 32B', category: 'text', provider: 'Qwen', icon: <Brain className="w-4 h-4" /> },
-    { id: 'perplexity-sonar-reasoning', name: 'Sonar Reasoning', category: 'research', provider: 'Perplexity', icon: <Search className="w-4 h-4" /> },
-    { id: 'perplexity-sonar-reasoning-pro', name: 'Sonar Reasoning Pro', category: 'research', provider: 'Perplexity', icon: <Search className="w-4 h-4" /> },
-    { id: 'hermes-3-llama-405b', name: 'Hermes 3 Llama 405B', category: 'research', provider: 'LambdaChat', icon: <Search className="w-4 h-4" /> },
-    { id: 'llama3.1-nemotron-70b', name: 'Llama 3.1 Nemotron 70B', category: 'text', provider: 'LambdaChat', icon: <Brain className="w-4 h-4" /> },
-    
-    // CODE MODELS (35)
-    { id: 'blackbox-gpt-4', name: 'GPT-4', category: 'code', provider: 'Blackbox', icon: <Code className="w-4 h-4" /> },
-    { id: 'fastapi-agent', name: 'FastAPI Agent', category: 'code', provider: 'Blackbox', icon: <Code className="w-4 h-4" /> },
-    { id: 'blackbox-gpt-4o', name: 'GPT-4o', category: 'code', provider: 'Blackbox', icon: <Code className="w-4 h-4" /> },
-    { id: 'builder-agent', name: 'Builder Agent', category: 'code', provider: 'Blackbox', icon: <Code className="w-4 h-4" /> },
-    { id: 'firebase-agent', name: 'Firebase Agent', category: 'code', provider: 'Blackbox', icon: <Code className="w-4 h-4" /> },
-    { id: 'flask-agent', name: 'Flask Agent', category: 'code', provider: 'Blackbox', icon: <Code className="w-4 h-4" /> },
-    { id: 'blackbox-gpt-4.1-nano', name: 'GPT-4.1 Nano', category: 'code', provider: 'Blackbox', icon: <Code className="w-4 h-4" /> },
-    { id: 'angularjs-agent', name: 'AngularJS Agent', category: 'code', provider: 'Blackbox', icon: <Code className="w-4 h-4" /> },
-    { id: 'blackbox-gpt-4o-mini', name: 'GPT-4o Mini', category: 'code', provider: 'Blackbox', icon: <Code className="w-4 h-4" /> },
-    { id: 'flutter-agent', name: 'Flutter Agent', category: 'code', provider: 'Blackbox', icon: <Code className="w-4 h-4" /> },
-    { id: 'erlang-agent', name: 'Erlang Agent', category: 'code', provider: 'Blackbox', icon: <Code className="w-4 h-4" /> },
-    { id: 'digitalocean-agent', name: 'DigitalOcean Agent', category: 'code', provider: 'Blackbox', icon: <Code className="w-4 h-4" /> },
-    { id: 'swift-agent', name: 'Swift Agent', category: 'code', provider: 'Blackbox', icon: <Code className="w-4 h-4" /> },
-    { id: 'mongodb-agent', name: 'MongoDB Agent', category: 'code', provider: 'Blackbox', icon: <Code className="w-4 h-4" /> },
-    { id: 'javascript-agent', name: 'JavaScript Agent', category: 'code', provider: 'Blackbox', icon: <Code className="w-4 h-4" /> },
-    { id: 'xcode-agent', name: 'Xcode Agent', category: 'code', provider: 'Blackbox', icon: <Code className="w-4 h-4" /> },
-    { id: 'go-agent', name: 'Go Agent', category: 'code', provider: 'Blackbox', icon: <Code className="w-4 h-4" /> },
-    { id: 'git-agent', name: 'Git Agent', category: 'code', provider: 'Blackbox', icon: <Code className="w-4 h-4" /> },
-    { id: 'html-agent', name: 'HTML Agent', category: 'code', provider: 'Blackbox', icon: <Code className="w-4 h-4" /> },
-    { id: 'pytorch-agent', name: 'PyTorch Agent', category: 'code', provider: 'Blackbox', icon: <Code className="w-4 h-4" /> },
-    { id: 'android-agent', name: 'Android Agent', category: 'code', provider: 'Blackbox', icon: <Code className="w-4 h-4" /> },
-    { id: 'blackbox-gpt-4.1-mini', name: 'GPT-4.1 Mini', category: 'code', provider: 'Blackbox', icon: <Code className="w-4 h-4" /> },
-    { id: 'java-agent', name: 'Java Agent', category: 'code', provider: 'Blackbox', icon: <Code className="w-4 h-4" /> },
-    { id: 'gitlab-agent', name: 'Gitlab Agent', category: 'code', provider: 'Blackbox', icon: <Code className="w-4 h-4" /> },
-    { id: 'nextjs-agent', name: 'Next.js Agent', category: 'code', provider: 'Blackbox', icon: <Code className="w-4 h-4" /> },
-    { id: 'python-agent', name: 'Python Agent', category: 'code', provider: 'Blackbox', icon: <Code className="w-4 h-4" /> },
-    { id: 'blackboxai', name: 'BlackboxAI', category: 'code', provider: 'Blackbox', icon: <Code className="w-4 h-4" /> },
-    { id: 'electron-agent', name: 'Electron Agent', category: 'code', provider: 'Blackbox', icon: <Code className="w-4 h-4" /> },
-    { id: 'bitbucket-agent', name: 'Bitbucket Agent', category: 'code', provider: 'Blackbox', icon: <Code className="w-4 h-4" /> },
-    { id: 'azure-agent', name: 'Azure Agent', category: 'code', provider: 'Blackbox', icon: <Code className="w-4 h-4" /> },
-    { id: 'docker-agent', name: 'Docker Agent', category: 'code', provider: 'Blackbox', icon: <Code className="w-4 h-4" /> },
-    { id: 'godot-agent', name: 'Godot Agent', category: 'code', provider: 'Blackbox', icon: <Code className="w-4 h-4" /> },
-    { id: 'react-agent', name: 'React Agent', category: 'code', provider: 'Blackbox', icon: <Code className="w-4 h-4" /> },
-    { id: 'gcp-agent', name: 'Google Cloud Agent', category: 'code', provider: 'Blackbox', icon: <Code className="w-4 h-4" /> },
-    { id: 'heroku-agent', name: 'Heroku Agent', category: 'code', provider: 'Blackbox', icon: <Code className="w-4 h-4" /> },
-
-    // IMAGE MODELS (28)
-    { id: 'sdxl-turbo', name: 'SDXL Turbo', category: 'image', provider: 'ImageLabs', icon: <Image className="w-4 h-4" /> },
-    { id: 'katayama-mix-xl', name: 'Katayama Mix XL', category: 'image', provider: 'ARTA', icon: <Image className="w-4 h-4" /> },
-    { id: 'new-school', name: 'New School', category: 'image', provider: 'ARTA', icon: <Image className="w-4 h-4" /> },
-    { id: 'anima-pencil-xl', name: 'Anima Pencil XL', category: 'image', provider: 'ARTA', icon: <Image className="w-4 h-4" /> },
-    { id: 'flame-design', name: 'Flame Design', category: 'image', provider: 'ARTA', icon: <Image className="w-4 h-4" /> },
-    { id: 'blackforest-flux-dev', name: 'Flux Dev', category: 'image', provider: 'BlackForest', icon: <Image className="w-4 h-4" /> },
-    { id: 'anything-xl', name: 'Anything XL', category: 'image', provider: 'ARTA', icon: <Image className="w-4 h-4" /> },
-    { id: 'arta-f-dev', name: 'F-Dev', category: 'image', provider: 'ARTA', icon: <Image className="w-4 h-4" /> },
-    { id: 'arta-flux-dev', name: 'Flux Dev', category: 'image', provider: 'ARTA', icon: <Image className="w-4 h-4" /> },
-    { id: 'trash-polka', name: 'Trash Polka', category: 'image', provider: 'ARTA', icon: <Image className="w-4 h-4" /> },
-    { id: 'pony-xl', name: 'Pony XL', category: 'image', provider: 'ARTA', icon: <Image className="w-4 h-4" /> },
-    { id: 'yamers-realistic-xl', name: 'Yamers Realistic XL', category: 'image', provider: 'ARTA', icon: <Image className="w-4 h-4" /> },
-    { id: 'watercolor', name: 'Watercolor', category: 'image', provider: 'ARTA', icon: <Image className="w-4 h-4" /> },
-    { id: 'embroidery-tattoo', name: 'Embroidery Tattoo', category: 'image', provider: 'ARTA', icon: <Image className="w-4 h-4" /> },
-    { id: 'realistic-tattoo', name: 'Realistic Tattoo', category: 'image', provider: 'ARTA', icon: <Image className="w-4 h-4" /> },
-    { id: 'playground-xl', name: 'Playground XL', category: 'image', provider: 'ARTA', icon: <Image className="w-4 h-4" /> },
-    { id: 'realistic-stock-xl', name: 'Realistic Stock XL', category: 'image', provider: 'ARTA', icon: <Image className="w-4 h-4" /> },
-    { id: 'on-limbs-black', name: 'On Limbs Black', category: 'image', provider: 'ARTA', icon: <Image className="w-4 h-4" /> },
-    { id: 'photographic', name: 'Photographic', category: 'image', provider: 'ARTA', icon: <Image className="w-4 h-4" /> },
-    { id: 'death-metal', name: 'Death Metal', category: 'image', provider: 'ARTA', icon: <Image className="w-4 h-4" /> },
-    { id: 'neo-traditional', name: 'Neo Traditional', category: 'image', provider: 'ARTA', icon: <Image className="w-4 h-4" /> },
-    { id: 'red-and-black', name: 'Red and Black', category: 'image', provider: 'ARTA', icon: <Image className="w-4 h-4" /> },
-    { id: 'kawaii', name: 'Kawaii', category: 'image', provider: 'ARTA', icon: <Image className="w-4 h-4" /> },
-    { id: 'biomech', name: 'Biomech', category: 'image', provider: 'ARTA', icon: <Image className="w-4 h-4" /> },
-    { id: 'arta-flux-pro', name: 'Flux Pro', category: 'image', provider: 'ARTA', icon: <Image className="w-4 h-4" /> },
-    { id: 'arta-flux', name: 'Flux', category: 'image', provider: 'ARTA', icon: <Image className="w-4 h-4" /> },
-    { id: 'mini-tattoo', name: 'Mini Tattoo', category: 'image', provider: 'ARTA', icon: <Image className="w-4 h-4" /> },
-    { id: 'arta-f-pro', name: 'F-Pro', category: 'image', provider: 'ARTA', icon: <Image className="w-4 h-4" /> },
-
-    // AUDIO MODELS (18)
-    { id: 'gemini-audio', name: 'Gemini Audio', category: 'audio', provider: 'Gemini', icon: <Music className="w-4 h-4" /> },
-    { id: 'scientific-style', name: 'Scientific Style', category: 'audio', provider: 'OpenAIFM', icon: <Music className="w-4 h-4" /> },
-    { id: 'alloy', name: 'Alloy Voice', category: 'audio', provider: 'OpenAIFM', icon: <Music className="w-4 h-4" /> },
-    { id: 'shimmer', name: 'Shimmer Voice', category: 'audio', provider: 'OpenAIFM', icon: <Music className="w-4 h-4" /> },
-    { id: 'sage', name: 'Sage Voice', category: 'audio', provider: 'OpenAIFM', icon: <Music className="w-4 h-4" /> },
-    { id: 'cowboy', name: 'Cowboy Voice', category: 'audio', provider: 'OpenAIFM', icon: <Music className="w-4 h-4" /> },
-    { id: 'calm', name: 'Calm Voice', category: 'audio', provider: 'OpenAIFM', icon: <Music className="w-4 h-4" /> },
-    { id: 'echo', name: 'Echo Voice', category: 'audio', provider: 'OpenAIFM', icon: <Music className="w-4 h-4" /> },
-    { id: 'verse', name: 'Verse Voice', category: 'audio', provider: 'OpenAIFM', icon: <Music className="w-4 h-4" /> },
-    { id: 'onyx', name: 'Onyx Voice', category: 'audio', provider: 'OpenAIFM', icon: <Music className="w-4 h-4" /> },
-    { id: 'ballad', name: 'Ballad Voice', category: 'audio', provider: 'OpenAIFM', icon: <Music className="w-4 h-4" /> },
-    { id: 'ash', name: 'Ash Voice', category: 'audio', provider: 'OpenAIFM', icon: <Music className="w-4 h-4" /> },
-    { id: 'friendly', name: 'Friendly Voice', category: 'audio', provider: 'OpenAIFM', icon: <Music className="w-4 h-4" /> },
-    { id: 'nova', name: 'Nova Voice', category: 'audio', provider: 'OpenAIFM', icon: <Music className="w-4 h-4" /> },
-    { id: 'fable', name: 'Fable Voice', category: 'audio', provider: 'OpenAIFM', icon: <Music className="w-4 h-4" /> },
-    { id: 'noir-detective', name: 'Noir Detective', category: 'audio', provider: 'OpenAIFM', icon: <Music className="w-4 h-4" /> },
-    { id: 'patient-teacher', name: 'Patient Teacher', category: 'audio', provider: 'OpenAIFM', icon: <Music className="w-4 h-4" /> },
-    { id: 'coral', name: 'Coral Voice', category: 'audio', provider: 'OpenAIFM', icon: <Music className="w-4 h-4" /> },
-
-    // MULTIMODAL MODELS (4)
-    { id: 'multimodal-gemini-1.5-pro', name: 'Gemini 1.5 Pro', category: 'multimodal', provider: 'TeachAnything', icon: <Brain className="w-4 h-4" /> },
-    { id: 'multimodal-gemini-1.5-flash', name: 'Gemini 1.5 Flash', category: 'multimodal', provider: 'TeachAnything', icon: <Brain className="w-4 h-4" /> },
-    { id: 'multimodal-free2gpt-flash', name: 'Gemini 1.5 Flash', category: 'multimodal', provider: 'Free2GPT', icon: <Brain className="w-4 h-4" /> },
-    { id: 'multimodal-free2gpt-pro', name: 'Gemini 1.5 Pro', category: 'multimodal', provider: 'Free2GPT', icon: <Brain className="w-4 h-4" /> }
-  ];
-
-  const categoryColors = {
-    text: 'from-blue-500 to-cyan-400',
-    code: 'from-green-500 to-emerald-400',
-    image: 'from-purple-500 to-pink-400',
-    audio: 'from-orange-500 to-red-400',
-    research: 'from-indigo-500 to-purple-500',
-    multimodal: 'from-teal-500 to-blue-500'
-  };
-
-  const categoryEmojis = {
-    text: '📝',
-    code: '💻',
-    image: '🖼️',
-    audio: '🔊',
-    research: '🔍',
-    multimodal: '🌀'
-  };
-
-  const handleThemeChange = (theme: 'light' | 'dark') => {
-    setSettings({...settings, theme});
-    document.documentElement.classList.toggle('dark', theme === 'dark');
+  const models = {
+    text: [
+      { name: 'TeachAnything gemini-1.5-flash', time: '0.50 с' },
+      { name: 'TeachAnything gemini-1.5-pro', time: '0.52 с' },
+      { name: 'Cohere command-r7b-arabic-02-2025', time: '0.97 с' },
+      { name: 'Cohere command-r7b-12-2024', time: '0.98 с' },
+      { name: 'LambdaChat apriel-5b-instruct', time: '1.05 с' },
+      { name: 'Cohere command-r', time: '1.08 с' },
+      { name: 'Qwen-3-30b-a3b', time: '1.20 с' },
+      { name: 'OIVSCode gpt-4.1-mini', time: '1.23 с' },
+      { name: 'Qwen-3-8b', time: '1.27 с' },
+      { name: 'LambdaChat deepseek-llama3.3-70b', time: '1.32 с' },
+      { name: 'Cohere command-a-03-2025', time: '1.35 с' },
+      { name: 'Cohere command-r-08-2024', time: '1.36 с' },
+      { name: 'LambdaChat lfm-40b', time: '1.67 с' },
+      { name: 'Cohere command-r-plus', time: '1.83 с' },
+      { name: 'OIVSCode gpt-4o-mini', time: '1.84 с' },
+      { name: 'LambdaChat llama3.3-70b-instr-fp8', time: '1.85 с' },
+      { name: 'LambdaChat qwen25-coder-32b-instr', time: '1.91 с' },
+      { name: 'Qwen-3-0.6b', time: '2.04 с' },
+      { name: 'Perplexity sonar', time: '2.05 с' },
+      { name: 'Perplexity sonar-pro', time: '2.19 с' },
+      { name: 'WeWordle gpt-4', time: '2.22 с' },
+      { name: 'Cohere command-r-plus-08-2024', time: '2.24 с' },
+      { name: 'Qwen-2.5', time: '2.40 с' },
+      { name: 'LambdaChat llama3.3-70b-instr-fp8', time: '2.49 с' },
+      { name: 'Yqcloud gpt-4', time: '2.69 с' },
+      { name: 'Free2GPT gemini-1.5-pro', time: '2.93 с' },
+      { name: 'Qwen-3-1.7b', time: '3.08 с' },
+      { name: 'Free2GPT gemini-1.5-flash', time: '3.24 с' },
+      { name: 'Qwen-2.5-max', time: '3.43 с' },
+      { name: 'Qwen-3-4b', time: '3.97 с' },
+      { name: 'Qwen-2-72b', time: '4.21 с' },
+      { name: 'LambdaChat qwen3-32b-fp8', time: '4.22 с' },
+      { name: 'Qwen-3-235b', time: '6.14 с' },
+      { name: 'Perplexity r1-1776', time: '6.37 с' },
+      { name: 'LambdaChat deepseek-r1', time: '6.66 с' },
+      { name: 'Qwen-3-14b', time: '7.31 с' },
+      { name: 'Qwen-3-32b', time: '7.65 с' },
+      { name: 'Perplexity sonar-reasoning', time: '9.54 с' },
+      { name: 'Perplexity sonar-reasoning-pro', time: '21.24 с' },
+      { name: 'LambdaChat hermes-3-llama-3.1-405b-fp8', time: '41.09 с' },
+      { name: 'LambdaChat llama3.1-nemotron-70b-instr', time: '84.89 с' }
+    ],
+    code: [
+      { name: 'gpt-4', time: '1.74 с' },
+      { name: 'FastAPI Agent', time: '1.82 с' },
+      { name: 'gpt-4o', time: '1.86 с' },
+      { name: 'Builder Agent', time: '1.99 с' },
+      { name: 'Firebase Agent', time: '2.02 с' },
+      { name: 'Flask Agent', time: '2.11 с' },
+      { name: 'gpt-4.1-nano', time: '2.12 с' },
+      { name: 'AngularJS Agent', time: '2.20 с' },
+      { name: 'gpt-4o-mini', time: '2.22 с' },
+      { name: 'Flutter Agent', time: '2.23 с' },
+      { name: 'Erlang Agent', time: '2.24 с' },
+      { name: 'DigitalOcean Agent', time: '2.25 с' },
+      { name: 'Swift Agent', time: '2.31 с' },
+      { name: 'MongoDB Agent', time: '2.41 с' },
+      { name: 'JavaScript Agent', time: '2.43 с' },
+      { name: 'Xcode Agent', time: '2.46 с' },
+      { name: 'Go Agent', time: '2.48 с' },
+      { name: 'Git Agent', time: '2.54 с' },
+      { name: 'HTML Agent', time: '2.58 с' },
+      { name: 'PyTorch Agent', time: '2.59 с' },
+      { name: 'Android Agent', time: '2.72 с' },
+      { name: 'gpt-4.1-mini', time: '2.73 с' },
+      { name: 'Java Agent', time: '2.93 с' },
+      { name: 'Gitlab Agent', time: '3.12 с' },
+      { name: 'Next.js Agent', time: '3.24 с' },
+      { name: 'Python Agent', time: '3.32 с' },
+      { name: 'blackboxai', time: '3.62 с' },
+      { name: 'Electron Agent', time: '3.75 с' },
+      { name: 'Bitbucket Agent', time: '3.82 с' },
+      { name: 'Azure Agent', time: '3.90 с' },
+      { name: 'Docker Agent', time: '4.31 с' },
+      { name: 'Godot Agent', time: '4.81 с' },
+      { name: 'React Agent', time: '5.10 с' },
+      { name: 'Google Cloud Agent', time: '5.56 с' },
+      { name: 'Heroku Agent', time: '5.83 с' }
+    ],
+    image: [
+      { name: 'ImageLabs sdxl-turbo', time: '8.68 с' },
+      { name: 'ARTA katayama-mix-xl', time: '14.07 с' },
+      { name: 'ARTA new-school', time: '14.23 с' },
+      { name: 'ARTA anima-pencil-xl', time: '14.43 с' },
+      { name: 'ARTA flame-design', time: '14.54 с' },
+      { name: 'BlackForest flux-dev', time: '15.45 с' },
+      { name: 'ARTA anything-xl', time: '16.16 с' },
+      { name: 'ARTA f-dev', time: '16.23 с' },
+      { name: 'ARTA flux-dev', time: '16.23 с' },
+      { name: 'ARTA trash-polka', time: '16.23 с' },
+      { name: 'ARTA pony-xl', time: '16.25 с' },
+      { name: 'ARTA yamers-realistic-xl', time: '16.26 с' },
+      { name: 'ARTA Watercolor', time: '16.39 с' },
+      { name: 'ARTA embroidery-tattoo', time: '16.46 с' },
+      { name: 'ARTA realistic-tattoo', time: '16.50 с' },
+      { name: 'ARTA playground-xl', time: '16.54 с' },
+      { name: 'ARTA realistic-stock-xl', time: '16.63 с' },
+      { name: 'ARTA on-limbs-black', time: '16.64 с' },
+      { name: 'ARTA photographic', time: '17.16 с' },
+      { name: 'ARTA death-metal', time: '18.22 с' },
+      { name: 'ARTA neo-traditional', time: '18.39 с' },
+      { name: 'ARTA red-and-black', time: '18.51 с' },
+      { name: 'ARTA kawaii', time: '19.25 с' },
+      { name: 'ARTA biomech', time: '20.96 с' },
+      { name: 'ARTA flux-pro', time: '25.14 с' },
+      { name: 'ARTA flux', time: '32.19 с' },
+      { name: 'ARTA mini-tattoo', time: '64.63 с' },
+      { name: 'ARTA f-pro', time: '250.87 с' }
+    ],
+    audio: [
+      { name: 'Gemini audio', time: '0.41 с' },
+      { name: 'OpenAIFM scientific_style', time: '0.94 с' },
+      { name: 'OpenAIFM alloy', time: '1.07 с' },
+      { name: 'OpenAIFM shimmer', time: '1.11 с' },
+      { name: 'OpenAIFM sage', time: '1.17 с' },
+      { name: 'OpenAIFM cowboy', time: '1.27 с' },
+      { name: 'OpenAIFM calm', time: '1.29 с' },
+      { name: 'OpenAIFM echo', time: '1.36 с' },
+      { name: 'OpenAIFM verse', time: '1.38 с' },
+      { name: 'OpenAIFM onyx', time: '1.39 с' },
+      { name: 'OpenAIFM ballad', time: '1.46 с' },
+      { name: 'OpenAIFM ash', time: '1.54 с' },
+      { name: 'OpenAIFM friendly', time: '1.64 с' },
+      { name: 'OpenAIFM nova', time: '1.67 с' },
+      { name: 'OpenAIFM fable', time: '1.69 с' },
+      { name: 'OpenAIFM noir_detective', time: '2.36 с' },
+      { name: 'OpenAIFM patient_teacher', time: '3.41 с' },
+      { name: 'OpenAIFM coral', time: '5.24 с' }
+    ],
+    multimodal: [
+      { name: 'TeachAnything gemini-1.5-pro', time: '0.67 с' },
+      { name: 'TeachAnything gemini-1.5-flash', time: '0.68 с' },
+      { name: 'Free2GPT gemini-1.5-flash', time: '4.16 с' },
+      { name: 'Free2GPT gemini-1.5-pro', time: '6.08 с' }
+    ]
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl glass-effect border-border max-h-[80vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[90vh] bg-sidebar border-sidebar-border">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-3 text-xl">
-            <Settings className="w-5 h-5" />
-            Настройки
-          </DialogTitle>
+          <DialogTitle className="text-sidebar-foreground">Настройки</DialogTitle>
         </DialogHeader>
-
-        <div className="space-y-6">
-          {/* Theme Selection */}
-          <div>
-            <Label className="text-lg font-semibold mb-3 block text-primary">Тема оформления</Label>
-            <ThemeToggle theme={settings.theme} onThemeChange={handleThemeChange} />
-          </div>
-
-          {/* Personal Information */}
-          <div>
-            <Label className="text-lg font-semibold mb-3 block text-primary">Персональная информация</Label>
+        
+        <div className="flex flex-col space-y-6">
+          {/* Personal Info */}
+          <div className="space-y-3">
+            <div className="flex items-center space-x-2">
+              <User className="w-4 h-4 text-sidebar-foreground" />
+              <Label className="text-sidebar-foreground">Личная информация</Label>
+            </div>
             <Textarea
-              placeholder="Расскажите о себе, чтобы ИИ лучше понимал ваши запросы..."
-              value={settings.personalInfo}
-              onChange={(e) => setSettings({...settings, personalInfo: e.target.value})}
-              className="min-h-20 bg-muted/50 border-border"
+              placeholder="Расскажите о себе, чтобы ИИ лучше понимал ваши потребности..."
+              value={personalInfo}
+              onChange={(e) => setPersonalInfo(e.target.value)}
+              className="bg-sidebar-accent border-sidebar-border text-sidebar-foreground"
+              rows={3}
             />
-            <p className="text-xs text-muted-foreground mt-2">
-              Эта информация поможет ИИ давать более персонализированные ответы
-            </p>
           </div>
 
-          {/* AI Model Selection */}
-          <div>
-            <Label className="text-lg font-semibold mb-3 block text-primary">ИИ Модель</Label>
-            <Select value={settings.aiModel} onValueChange={(value) => setSettings({...settings, aiModel: value})}>
-              <SelectTrigger className="bg-muted/50 border-border">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="bg-background border-border max-h-64">
-                {Object.entries(
-                  allAiModels.reduce((acc, model) => {
-                    if (!acc[model.category]) acc[model.category] = [];
-                    acc[model.category].push(model);
-                    return acc;
-                  }, {} as Record<string, typeof allAiModels>)
-                ).map(([category, models]) => (
+          {/* Models Section */}
+          <div className="space-y-3">
+            <div className="flex items-center space-x-2">
+              <Bot className="w-4 h-4 text-sidebar-foreground" />
+              <Label className="text-sidebar-foreground">Доступные модели ИИ (130+)</Label>
+            </div>
+            
+            <ScrollArea className="h-64 w-full border border-sidebar-border rounded-lg">
+              <div className="p-4 space-y-4">
+                {Object.entries(models).map(([category, categoryModels]) => (
                   <div key={category}>
-                    <div className={`px-3 py-2 text-xs font-semibold bg-gradient-to-r ${categoryColors[category as keyof typeof categoryColors]} bg-clip-text text-transparent uppercase tracking-wider`}>
-                      {categoryEmojis[category as keyof typeof categoryEmojis]} {category.toUpperCase()} ({models.length})
+                    <h4 className="font-medium text-sidebar-foreground mb-2 capitalize">
+                      {category === 'text' && '📝 TEXT (41)'}
+                      {category === 'code' && '💻 CODE (35)'}
+                      {category === 'image' && '🖼️ IMAGE (28)'}
+                      {category === 'audio' && '🔊 AUDIO (18)'}
+                      {category === 'multimodal' && '🌀 MULTIMODAL (4)'}
+                    </h4>
+                    <div className="grid grid-cols-1 gap-1">
+                      {categoryModels.map((model, index) => (
+                        <Card key={index} className="p-2 bg-sidebar-accent border-sidebar-border">
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm text-sidebar-foreground">{model.name}</span>
+                            <Badge variant="outline" className="text-xs text-sidebar-foreground border-sidebar-border">
+                              {model.time}
+                            </Badge>
+                          </div>
+                        </Card>
+                      ))}
                     </div>
-                    {models.map((model) => (
-                      <SelectItem key={model.id} value={model.id} className="hover:bg-accent">
-                        <div className="flex items-center gap-2">
-                          {model.icon}
-                          <span className="font-medium">{model.name}</span>
-                          <span className="text-xs text-muted-foreground">({model.provider})</span>
-                        </div>
-                      </SelectItem>
-                    ))}
                   </div>
                 ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* General Settings */}
-          <div className="grid grid-cols-2 gap-6">
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <Label>Уведомления</Label>
-                <Switch
-                  checked={settings.notifications}
-                  onCheckedChange={(checked) => setSettings({...settings, notifications: checked})}
-                />
               </div>
-              <div className="flex items-center justify-between">
-                <Label>Авто-прокрутка</Label>
-                <Switch
-                  checked={settings.autoScroll}
-                  onCheckedChange={(checked) => setSettings({...settings, autoScroll: checked})}
-                />
-              </div>
-            </div>
+            </ScrollArea>
           </div>
 
-          {/* Models Stats */}
-          <div className="glass-card rounded-xl p-4 border">
-            <h3 className="text-lg font-semibold text-primary mb-3">Доступные модели</h3>
-            <div className="grid grid-cols-3 gap-2 text-sm">
-              <div className="text-blue-500">📝 Текст: 41 модель</div>
-              <div className="text-green-500">💻 Код: 35 агентов</div>
-              <div className="text-purple-500">🖼️ Изображения: 28 моделей</div>
-              <div className="text-orange-500">🔊 Аудио: 18 голосов</div>
-              <div className="text-indigo-500">🔍 Исследования: 8 моделей</div>
-              <div className="text-teal-500">🌀 Мультимодальные: 4 модели</div>
-            </div>
-            <div className="mt-3 text-center">
-              <span className="text-primary font-bold">ВСЕГО: 130+ моделей</span>
-            </div>
-          </div>
-
-          {/* Action Buttons */}
-          <div className="flex justify-between pt-4 border-t border-border">
+          {/* Logout Button */}
+          <div className="pt-4 border-t border-sidebar-border">
             <Button 
-              variant="outline" 
-              onClick={() => onOpenChange(false)}
-              className="border-border hover:bg-accent"
+              variant="destructive" 
+              onClick={onLogout}
+              className="w-full"
             >
-              Отмена
+              <LogOut className="w-4 h-4 mr-2" />
+              Выйти
             </Button>
-            <div className="flex gap-3">
-              <Button 
-                variant="destructive" 
-                onClick={onLogout}
-                className="bg-destructive/20 text-destructive hover:bg-destructive/30 border-destructive/30"
-              >
-                Выйти
-              </Button>
-              <Button 
-                onClick={() => onOpenChange(false)}
-                className="bg-gradient-to-r from-blue-500 to-cyan-400 hover:from-blue-600 hover:to-cyan-500 text-white font-semibold apple-hover smooth-transition"
-              >
-                Сохранить
-              </Button>
-            </div>
           </div>
         </div>
       </DialogContent>

@@ -6,9 +6,9 @@ import { Card } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { ChatSidebar } from '@/components/sidebar/ChatSidebar';
 import { SearchModeSelector } from './SearchModeSelector';
+import { ModelSelector } from './ModelSelector';
 import { FileUpload } from './FileUpload';
-import { Send, Bot, User, Paperclip } from 'lucide-react';
-import { toast } from '@/hooks/use-toast';
+import { Send, Bot, User } from 'lucide-react';
 
 interface ChatInterfaceProps {
   userType: 'basic' | 'premium';
@@ -21,23 +21,69 @@ interface Message {
   sender: 'user' | 'bot';
   timestamp: Date;
   files?: File[];
+  model?: string;
+}
+
+interface Chat {
+  id: string;
+  title: string;
+  messages: Message[];
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export const ChatInterface = ({ userType, onLogout }: ChatInterfaceProps) => {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '1',
-      content: `Привет! Я DanyBot - твой персональный ИИ-ассистент. ${userType === 'premium' ? 'У тебя премиум доступ, так что могу помочь с любыми задачами и обработать файлы!' : 'У тебя базовый доступ. Я помогу с общими вопросами!'}`,
-      sender: 'bot',
-      timestamp: new Date()
-    }
-  ]);
+  const [chats, setChats] = useState<Chat[]>([]);
+  const [currentChatId, setCurrentChatId] = useState<string>('');
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  const [currentChatId, setCurrentChatId] = useState('1');
   const [searchMode, setSearchMode] = useState<'quick' | 'research'>('quick');
+  const [selectedModel, setSelectedModel] = useState('TeachAnything gemini-1.5-flash');
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Load chats from localStorage on component mount
+  useEffect(() => {
+    const savedChats = localStorage.getItem('danybot-chats');
+    const savedCurrentChatId = localStorage.getItem('danybot-current-chat');
+    
+    if (savedChats) {
+      const parsedChats = JSON.parse(savedChats).map((chat: any) => ({
+        ...chat,
+        messages: chat.messages.map((msg: any) => ({
+          ...msg,
+          timestamp: new Date(msg.timestamp)
+        })),
+        createdAt: new Date(chat.createdAt),
+        updatedAt: new Date(chat.updatedAt)
+      }));
+      setChats(parsedChats);
+      
+      if (savedCurrentChatId && parsedChats.find((chat: Chat) => chat.id === savedCurrentChatId)) {
+        setCurrentChatId(savedCurrentChatId);
+      } else if (parsedChats.length > 0) {
+        setCurrentChatId(parsedChats[0].id);
+      } else {
+        createNewChat();
+      }
+    } else {
+      createNewChat();
+    }
+  }, []);
+
+  // Save chats to localStorage whenever chats change
+  useEffect(() => {
+    if (chats.length > 0) {
+      localStorage.setItem('danybot-chats', JSON.stringify(chats));
+    }
+  }, [chats]);
+
+  // Save current chat ID whenever it changes
+  useEffect(() => {
+    if (currentChatId) {
+      localStorage.setItem('danybot-current-chat', currentChatId);
+    }
+  }, [currentChatId]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -45,10 +91,56 @@ export const ChatInterface = ({ userType, onLogout }: ChatInterfaceProps) => {
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages]);
+  }, [chats, currentChatId]);
 
-  const generateBotResponse = (input: string, type: 'basic' | 'premium', files?: File[], mode?: 'quick' | 'research'): string => {
+  const createNewChat = () => {
+    const newChatId = Date.now().toString();
+    const newChat: Chat = {
+      id: newChatId,
+      title: 'Новый чат',
+      messages: [{
+        id: '1',
+        content: `Привет! Я DanyBot - твой персональный ИИ-ассистент. ${userType === 'premium' ? 'У тебя премиум доступ, так что могу помочь с любыми задачами и обработать файлы!' : 'У тебя базовый доступ. Я помогу с общими вопросами!'}`,
+        sender: 'bot',
+        timestamp: new Date()
+      }],
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    
+    setChats(prev => [newChat, ...prev]);
+    setCurrentChatId(newChatId);
+  };
+
+  const getCurrentChat = (): Chat | undefined => {
+    return chats.find(chat => chat.id === currentChatId);
+  };
+
+  const updateChatTitle = (chatId: string, newTitle: string) => {
+    setChats(prev => prev.map(chat => 
+      chat.id === chatId 
+        ? { ...chat, title: newTitle, updatedAt: new Date() }
+        : chat
+    ));
+  };
+
+  const deleteChat = (chatId: string) => {
+    setChats(prev => {
+      const updatedChats = prev.filter(chat => chat.id !== chatId);
+      if (chatId === currentChatId) {
+        if (updatedChats.length > 0) {
+          setCurrentChatId(updatedChats[0].id);
+        } else {
+          createNewChat();
+        }
+      }
+      return updatedChats;
+    });
+  };
+
+  const generateBotResponse = (input: string, type: 'basic' | 'premium', files?: File[], mode?: 'quick' | 'research', model?: string): string => {
     const modePrefix = mode === 'research' ? 'Провожу глубокий анализ... ' : 'Быстро отвечаю: ';
+    const modelInfo = model ? ` (используя ${model})` : '';
     
     const responses = {
       basic: [
@@ -66,25 +158,44 @@ export const ChatInterface = ({ userType, onLogout }: ChatInterfaceProps) => {
     };
 
     if (files && files.length > 0 && type === 'premium') {
-      return `${modePrefix}Вижу, что ты загрузил ${files.length} файл(ов). Анализирую содержимое... С премиум доступом я могу обработать различные форматы файлов и дать детальный анализ.`;
+      return `${modePrefix}Вижу, что ты загрузил ${files.length} файл(ов). Анализирую содержимое...${modelInfo} С премиум доступом я могу обработать различные форматы файлов и дать детальный анализ.`;
     }
 
     const typeResponses = responses[type];
-    return modePrefix + typeResponses[Math.floor(Math.random() * typeResponses.length)];
+    return modePrefix + typeResponses[Math.floor(Math.random() * typeResponses.length)] + modelInfo;
   };
 
   const sendMessage = async () => {
     if (!inputValue.trim() && selectedFiles.length === 0) return;
+
+    const currentChat = getCurrentChat();
+    if (!currentChat) return;
 
     const userMessage: Message = {
       id: Date.now().toString(),
       content: inputValue || 'Файлы прикреплены',
       sender: 'user',
       timestamp: new Date(),
-      files: selectedFiles.length > 0 ? [...selectedFiles] : undefined
+      files: selectedFiles.length > 0 ? [...selectedFiles] : undefined,
+      model: selectedModel
     };
 
-    setMessages(prev => [...prev, userMessage]);
+    // Update chat title with first user message
+    if (currentChat.messages.length === 1 && inputValue.trim()) {
+      const newTitle = inputValue.trim().substring(0, 30) + (inputValue.trim().length > 30 ? '...' : '');
+      updateChatTitle(currentChatId, newTitle);
+    }
+
+    setChats(prev => prev.map(chat => 
+      chat.id === currentChatId 
+        ? { 
+            ...chat, 
+            messages: [...chat.messages, userMessage],
+            updatedAt: new Date()
+          }
+        : chat
+    ));
+
     setInputValue('');
     setSelectedFiles([]);
     setIsTyping(true);
@@ -92,12 +203,21 @@ export const ChatInterface = ({ userType, onLogout }: ChatInterfaceProps) => {
     setTimeout(() => {
       const botResponse: Message = {
         id: (Date.now() + 1).toString(),
-        content: generateBotResponse(inputValue, userType, selectedFiles, searchMode),
+        content: generateBotResponse(inputValue, userType, selectedFiles, searchMode, selectedModel),
         sender: 'bot',
-        timestamp: new Date()
+        timestamp: new Date(),
+        model: selectedModel
       };
       
-      setMessages(prev => [...prev, botResponse]);
+      setChats(prev => prev.map(chat => 
+        chat.id === currentChatId 
+          ? { 
+              ...chat, 
+              messages: [...chat.messages, botResponse],
+              updatedAt: new Date()
+            }
+          : chat
+      ));
       setIsTyping(false);
     }, 1000 + Math.random() * 2000);
   };
@@ -110,27 +230,18 @@ export const ChatInterface = ({ userType, onLogout }: ChatInterfaceProps) => {
     setSelectedFiles(prev => prev.filter((_, i) => i !== index));
   };
 
-  const handleNewChat = () => {
-    setMessages([{
-      id: '1',
-      content: `Начинаем новый чат! ${userType === 'premium' ? 'У тебя премиум доступ ко всем 130+ моделям ИИ!' : 'У тебя базовый доступ.'}`,
-      sender: 'bot',
-      timestamp: new Date()
-    }]);
-    setCurrentChatId(Date.now().toString());
-  };
-
-  const handleSelectChat = (chatId: string) => {
-    setCurrentChatId(chatId);
-    // Здесь можно загрузить сообщения для выбранного чата
-  };
+  const currentChat = getCurrentChat();
+  const messages = currentChat?.messages || [];
 
   return (
     <div className="min-h-screen flex bg-background">
       {/* Sidebar */}
       <ChatSidebar
-        onNewChat={handleNewChat}
-        onSelectChat={handleSelectChat}
+        chats={chats}
+        onNewChat={createNewChat}
+        onSelectChat={setCurrentChatId}
+        onUpdateChatTitle={updateChatTitle}
+        onDeleteChat={deleteChat}
         currentChatId={currentChatId}
         onLogout={onLogout}
       />
@@ -178,9 +289,16 @@ export const ChatInterface = ({ userType, onLogout }: ChatInterfaceProps) => {
                     <p className="text-sm leading-relaxed">
                       {message.content}
                     </p>
-                    <p className={`text-xs opacity-70 mt-2 ${message.sender === 'user' ? 'text-white/70' : 'text-muted-foreground'}`}>
-                      {message.timestamp.toLocaleTimeString()}
-                    </p>
+                    <div className="flex items-center justify-between mt-2">
+                      <p className={`text-xs opacity-70 ${message.sender === 'user' ? 'text-white/70' : 'text-muted-foreground'}`}>
+                        {message.timestamp.toLocaleTimeString()}
+                      </p>
+                      {message.model && (
+                        <p className={`text-xs opacity-70 ${message.sender === 'user' ? 'text-white/70' : 'text-muted-foreground'}`}>
+                          {message.model}
+                        </p>
+                      )}
+                    </div>
                   </Card>
                   
                   {message.files && message.files.length > 0 && (
@@ -221,6 +339,7 @@ export const ChatInterface = ({ userType, onLogout }: ChatInterfaceProps) => {
         <div className="glass-effect border-t border-border p-4">
           <div className="max-w-4xl mx-auto">
             <SearchModeSelector mode={searchMode} onModeChange={setSearchMode} />
+            <ModelSelector selectedModel={selectedModel} onModelChange={setSelectedModel} />
             
             <FileUpload
               userType={userType}
@@ -238,24 +357,13 @@ export const ChatInterface = ({ userType, onLogout }: ChatInterfaceProps) => {
                 className="flex-1 bg-muted/50 border-border placeholder:text-muted-foreground focus:border-primary smooth-transition rounded-xl"
                 disabled={isTyping}
               />
-              <div className="flex space-x-1">
-                {userType === 'premium' && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="text-muted-foreground hover:text-foreground hover:bg-accent smooth-transition rounded-xl"
-                  >
-                    <Paperclip className="w-4 h-4" />
-                  </Button>
-                )}
-                <Button 
-                  onClick={sendMessage}
-                  disabled={(!inputValue.trim() && selectedFiles.length === 0) || isTyping}
-                  className="bg-gradient-to-r from-blue-500 to-cyan-400 hover:from-blue-600 hover:to-cyan-500 text-white shadow-lg apple-hover smooth-transition rounded-xl px-6"
-                >
-                  <Send className="w-4 h-4" />
-                </Button>
-              </div>
+              <Button 
+                onClick={sendMessage}
+                disabled={(!inputValue.trim() && selectedFiles.length === 0) || isTyping}
+                className="bg-gradient-to-r from-blue-500 to-cyan-400 hover:from-blue-600 hover:to-cyan-500 text-white shadow-lg apple-hover smooth-transition rounded-xl px-6"
+              >
+                <Send className="w-4 h-4" />
+              </Button>
             </div>
             
             {userType === 'basic' && (
