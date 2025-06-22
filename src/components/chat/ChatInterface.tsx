@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -341,13 +340,6 @@ export const ChatInterface = ({ userType, onLogout }: ChatInterfaceProps) => {
             <SearchModeSelector mode={searchMode} onModeChange={setSearchMode} />
             <ModelSelector selectedModel={selectedModel} onModelChange={setSelectedModel} />
             
-            <FileUpload
-              userType={userType}
-              onFileSelect={handleFileSelect}
-              selectedFiles={selectedFiles}
-              onRemoveFile={handleRemoveFile}
-            />
-            
             <div className="flex space-x-2 mt-3">
               <Input
                 value={inputValue}
@@ -356,6 +348,12 @@ export const ChatInterface = ({ userType, onLogout }: ChatInterfaceProps) => {
                 placeholder="Напишите сообщение..."
                 className="flex-1 bg-muted/50 border-border placeholder:text-muted-foreground focus:border-primary smooth-transition rounded-xl"
                 disabled={isTyping}
+              />
+              <FileUpload
+                userType={userType}
+                onFileSelect={handleFileSelect}
+                selectedFiles={selectedFiles}
+                onRemoveFile={handleRemoveFile}
               />
               <Button 
                 onClick={sendMessage}
