@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
@@ -8,10 +8,13 @@ import { SearchModeSelector } from './SearchModeSelector';
 import { ModelSelector } from './ModelSelector';
 import { FileUpload } from './FileUpload';
 import { Send, Bot, User } from 'lucide-react';
+import { workingProviders } from '@/providers/workingProviders';
+import ReactMarkdown from 'react-markdown';
+import { toast } from '@/components/ui/use-toast';
+import './ChatInterface.css';
 
-interface ChatInterfaceProps {
-  userType: 'basic' | 'premium';
-  onLogout: () => void;
+interface FileWithUrl extends File {
+  url?: string;
 }
 
 interface Message {
@@ -19,8 +22,26 @@ interface Message {
   content: string;
   sender: 'user' | 'bot';
   timestamp: Date;
-  files?: File[];
+  files?: FileWithUrl[];
   model?: string;
+  category: string;
+}
+
+interface GeneratedFile {
+  url: string;
+  name: string;
+  type: string;
+}
+
+interface ChatInterfaceProps {
+  userType: 'basic' | 'premium';
+  onLogout: () => void;
+}
+
+interface ApiResponse {
+  response: string;
+  files?: GeneratedFile[];
+  error?: string;
 }
 
 interface Chat {
@@ -31,15 +52,43 @@ interface Chat {
   updatedAt: Date;
 }
 
+const CATEGORIES = [
+  { value: 'text', label: 'Текст' },
+  { value: 'image', label: 'Картинки' },
+  { value: 'audio', label: 'Аудио' },
+  { value: 'research', label: 'Ресерч' },
+];
+
+const MODEL_COLORS = [
+  'bg-gradient-to-br from-blue-600 to-cyan-500',
+  'bg-gradient-to-br from-purple-600 to-pink-500',
+  'bg-gradient-to-br from-gray-700 to-gray-400',
+  'bg-gradient-to-br from-green-600 to-teal-400',
+  'bg-gradient-to-br from-yellow-500 to-orange-400',
+];
+
+const getModelLogo = (model: string) => {
+  if (model.toLowerCase().includes('gemini')) return '🤖';
+  if (model.toLowerCase().includes('gpt')) return '🧠';
+  if (model.toLowerCase().includes('image')) return '🖼️';
+  if (model.toLowerCase().includes('audio')) return '🔊';
+  if (model.toLowerCase().includes('research')) return '🔍';
+  return '✨';
+};
+
 export const ChatInterface = ({ userType, onLogout }: ChatInterfaceProps) => {
   const [chats, setChats] = useState<Chat[]>([]);
   const [currentChatId, setCurrentChatId] = useState<string>('');
-  const [inputValue, setInputValue] = useState('');
-  const [isTyping, setIsTyping] = useState(false);
-  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [inputValue, setInputValue] = useState<string>('');
+  const [isTyping, setIsTyping] = useState<boolean>(false);
+  const [selectedFiles, setSelectedFiles] = useState<FileWithUrl[]>([]);
   const [searchMode, setSearchMode] = useState<'quick' | 'research'>('quick');
   const [selectedModel, setSelectedModel] = useState('TeachAnything gemini-1.5-flash');
+  const [category, setCategory] = useState<string>('text');
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [chatMessages, setChatMessages] = useState<Message[]>([]);
+  const [model, setModel] = useState('gemini-1.5-flash');
 
   // Load chats from localStorage on component mount
   useEffect(() => {
@@ -84,13 +133,25 @@ export const ChatInterface = ({ userType, onLogout }: ChatInterfaceProps) => {
     }
   }, [currentChatId]);
 
+  useEffect(() => {
+    if (messagesEndRef.current) messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+  }, [chats, currentChatId]);
+
+  useEffect(() => {
+    // Сброс модели при смене категории
+    setSelectedModel('');
+  }, [category]);
+
+  // Прокрутка вниз при добавлении сообщения
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [chatMessages]);
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [chats, currentChatId]);
 
   const createNewChat = () => {
     const newChatId = Date.now().toString();
@@ -101,7 +162,8 @@ export const ChatInterface = ({ userType, onLogout }: ChatInterfaceProps) => {
         id: '1',
         content: `Привет! Я DanyBot - твой персональный ИИ-ассистент. ${userType === 'premium' ? 'У тебя премиум доступ, так что могу помочь с любыми задачами и обработать файлы!' : 'У тебя базовый доступ. Я помогу с общими вопросами!'}`,
         sender: 'bot',
-        timestamp: new Date()
+        timestamp: new Date(),
+        category: 'text'
       }],
       createdAt: new Date(),
       updatedAt: new Date()
@@ -164,65 +226,82 @@ export const ChatInterface = ({ userType, onLogout }: ChatInterfaceProps) => {
     return modePrefix + typeResponses[Math.floor(Math.random() * typeResponses.length)] + modelInfo;
   };
 
-  const sendMessage = async () => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     if (!inputValue.trim() && selectedFiles.length === 0) return;
 
-    const currentChat = getCurrentChat();
-    if (!currentChat) return;
-
-    const userMessage: Message = {
+    const newMessage: Message = {
       id: Date.now().toString(),
-      content: inputValue || 'Файлы прикреплены',
+      content: inputValue,
       sender: 'user',
       timestamp: new Date(),
-      files: selectedFiles.length > 0 ? [...selectedFiles] : undefined,
-      model: selectedModel
+      files: selectedFiles,
+      model: model,
+      category: category
     };
 
-    // Update chat title with first user message
-    if (currentChat.messages.length === 1 && inputValue.trim()) {
-      const newTitle = inputValue.trim().substring(0, 30) + (inputValue.trim().length > 30 ? '...' : '');
-      updateChatTitle(currentChatId, newTitle);
-    }
-
-    setChats(prev => prev.map(chat => 
-      chat.id === currentChatId 
-        ? { 
-            ...chat, 
-            messages: [...chat.messages, userMessage],
-            updatedAt: new Date()
-          }
-        : chat
-    ));
-
+    setChatMessages(prev => [...prev, newMessage]);
     setInputValue('');
     setSelectedFiles([]);
-    setIsTyping(true);
 
-    setTimeout(() => {
-      const botResponse: Message = {
-        id: (Date.now() + 1).toString(),
-        content: generateBotResponse(inputValue, userType, selectedFiles, searchMode, selectedModel),
+    try {
+      setIsLoading(true);
+      const formData = new FormData();
+      formData.append('message', inputValue);
+      formData.append('provider', availableModels.find(m => m.value === model)?.provider || '');
+      formData.append('model', model);
+      formData.append('category', category);
+      
+      selectedFiles.forEach(file => {
+        formData.append('files', file);
+      });
+
+      const response = await fetch('/api/v1/chat', {
+        method: 'POST',
+        body: formData
+      });
+
+      if (!response.ok) {
+        if (response.status === 404) {
+          throw new Error('Сервер не отвечает или endpoint не найден (404)');
+        }
+        throw new Error(`Ошибка при отправке сообщения: ${response.status}`);
+      }
+
+      const data: ApiResponse = await response.json();
+      
+      if (data.error) {
+        throw new Error(data.error);
+      }
+
+      const botMessage: Message = {
+        id: Date.now().toString(),
+        content: data.response,
         sender: 'bot',
         timestamp: new Date(),
-        model: selectedModel
+        files: data.files?.map((f) => ({
+          ...f,
+          url: f.url
+        })) as FileWithUrl[],
+        model: model,
+        category: category
       };
-      
-      setChats(prev => prev.map(chat => 
-        chat.id === currentChatId 
-          ? { 
-              ...chat, 
-              messages: [...chat.messages, botResponse],
-              updatedAt: new Date()
-            }
-          : chat
-      ));
-      setIsTyping(false);
-    }, 1000 + Math.random() * 2000);
+
+      setChatMessages(prev => [...prev, botMessage]);
+    } catch (error) {
+      console.error('Ошибка:', error);
+      toast({
+        variant: "destructive",
+        title: "Ошибка",
+        description: error instanceof Error ? error.message : 'Произошла ошибка при обращении к ИИ'
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleFileSelect = (files: File[]) => {
-    setSelectedFiles(prev => [...prev, ...files]);
+    setSelectedFiles(prev => [...prev, ...files.map(f => ({ ...f } as FileWithUrl))]);
   };
 
   const handleRemoveFile = (index: number) => {
@@ -232,8 +311,19 @@ export const ChatInterface = ({ userType, onLogout }: ChatInterfaceProps) => {
   const currentChat = getCurrentChat();
   const messages = currentChat?.messages || [];
 
+  const availableModels = useMemo(() => {
+    return workingProviders
+      .filter(p => p.category === category)
+      .map(p => ({
+        value: p.model,
+        label: `${p.provider} ${p.model}`,
+        provider: p.provider,
+        key: `${p.provider}-${p.model}`
+      }));
+  }, [category]);
+
   return (
-    <div className="min-h-screen flex bg-background">
+    <div className="flex flex-col h-full max-h-screen">
       {/* Sidebar */}
       <ChatSidebar
         chats={chats}
@@ -246,137 +336,120 @@ export const ChatInterface = ({ userType, onLogout }: ChatInterfaceProps) => {
       />
 
       {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col">
-        {/* Header */}
-        <div className="glass-effect border-b border-border p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-xl font-semibold">DanyBot</h1>
-              <p className="text-sm text-muted-foreground">
-                {userType === 'premium' ? '✨ Pro режим' : '🔒 Базовый режим'}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Chat Messages */}
-        <div className="flex-1 overflow-y-auto p-6">
+      <div className="flex-1 flex flex-col max-h-[70vh]">
+        <div className="flex-1 overflow-y-auto custom-scrollbar p-4 bg-background" style={{ minHeight: 0 }}>
           <div className="max-w-4xl mx-auto space-y-6">
-            {messages.map((message) => (
+            {chatMessages.length === 0 && (
+              <div className="flex flex-col items-center justify-center h-40 text-muted-foreground opacity-60 select-none">
+                <Bot className="w-10 h-10 mb-2" />
+                <div>Начните диалог с ИИ — выберите модель и напишите сообщение!</div>
+              </div>
+            )}
+            {chatMessages.map((message) => (
               <div
                 key={message.id}
-                className={`flex items-start space-x-3 animate-fade-in ${
-                  message.sender === 'user' ? 'flex-row-reverse space-x-reverse' : ''
-                }`}
+                className={`flex items-end gap-2 ${message.sender === 'user' ? 'justify-end' : 'justify-start'} animate-fade-in`}
               >
-                <Avatar className={`w-10 h-10 ${
-                  message.sender === 'bot' 
-                    ? 'bg-gradient-to-r from-blue-500 to-purple-500' 
-                    : 'bg-gradient-to-r from-green-500 to-cyan-500'
-                } shadow-lg`}>
-                  <AvatarFallback className="text-white font-bold">
-                    {message.sender === 'bot' ? <Bot className="w-5 h-5" /> : <User className="w-5 h-5" />}
-                  </AvatarFallback>
-                </Avatar>
-                
-                <div className="flex flex-col max-w-[80%]">
-                  <Card className={`p-4 ${
-                    message.sender === 'user'
-                      ? 'bg-gradient-to-r from-blue-500 to-cyan-400 text-white shadow-lg'
-                      : 'glass-card'
-                  } rounded-2xl`}>
-                    <p className="text-sm leading-relaxed">
-                      {message.content}
-                    </p>
-                    <div className="flex items-center justify-between mt-2">
-                      <p className={`text-xs opacity-70 ${message.sender === 'user' ? 'text-white/70' : 'text-muted-foreground'}`}>
-                        {message.timestamp.toLocaleTimeString()}
-                      </p>
-                      {message.model && (
-                        <p className={`text-xs opacity-70 ${message.sender === 'user' ? 'text-white/70' : 'text-muted-foreground'}`}>
-                          {message.model}
-                        </p>
-                      )}
-                    </div>
-                  </Card>
-                  
+                <div className="flex flex-col items-center">
+                  <div className={`rounded-full w-10 h-10 flex items-center justify-center shadow-lg ${message.sender === 'user' ? 'bg-gradient-to-br from-blue-500 to-cyan-400' : 'bg-gradient-to-br from-gray-300 to-gray-100'}`}> 
+                    {message.sender === 'user' ? <User className="w-6 h-6 text-white" /> : <Bot className="w-6 h-6 text-blue-500" />}
+                  </div>
+                  <span className="text-[10px] text-muted-foreground mt-1">{message.timestamp.toLocaleTimeString()}</span>
+                </div>
+                <div className={`flex flex-col max-w-[70vw] min-w-[120px] ${message.sender === 'user' ? 'items-end' : 'items-start'}`}
+                  style={{
+                    background: message.sender === 'user' ? 'linear-gradient(90deg, #2563eb 0%, #38bdf8 100%)' : 'rgba(255,255,255,0.95)',
+                    color: message.sender === 'user' ? '#fff' : '#222',
+                    borderRadius: 18,
+                    boxShadow: message.sender === 'user' ? '0 2px 8px #2563eb33' : '0 2px 8px #0001',
+                    padding: 16,
+                    marginBottom: 8
+                  }}
+                >
+                  <div className="flex items-center mb-2 gap-2">
+                    <span className="text-xs font-semibold text-muted-foreground">{message.model}</span>
+                    <span className="text-xs text-muted-foreground">{message.category}</span>
+                  </div>
+                  <ReactMarkdown>{message.content}</ReactMarkdown>
                   {message.files && message.files.length > 0 && (
-                    <div className="mt-2 space-y-1">
-                      {message.files.map((file, index) => (
-                        <div key={index} className="text-xs text-primary glass-card rounded-lg px-3 py-2">
-                          📎 {file.name}
-                        </div>
+                    <div className="mt-2">
+                      {message.files.map((file, i) => (
+                        <a key={i} href={file.url || '#'} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline block">{file.name || 'Файл'}</a>
                       ))}
                     </div>
                   )}
                 </div>
               </div>
             ))}
-            
-            {isTyping && (
-              <div className="flex items-start space-x-3 animate-fade-in">
-                <Avatar className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 shadow-lg">
-                  <AvatarFallback className="text-white font-bold">
-                    <Bot className="w-5 h-5" />
-                  </AvatarFallback>
-                </Avatar>
-                <Card className="glass-card p-4 rounded-2xl">
-                  <div className="flex space-x-1">
-                    <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
-                    <div className="w-2 h-2 bg-purple-400 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
-                    <div className="w-2 h-2 bg-cyan-400 rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></div>
+            {isLoading && (
+              <div className="flex items-end gap-2 justify-start animate-fade-in">
+                <div className="flex flex-col items-center">
+                  <div className="rounded-full w-10 h-10 flex items-center justify-center shadow-lg bg-gradient-to-br from-gray-300 to-gray-100">
+                    <Bot className="w-6 h-6 text-blue-500 animate-spin-slow" />
                   </div>
-                </Card>
+                  <span className="text-[10px] text-muted-foreground mt-1">{new Date().toLocaleTimeString()}</span>
+                </div>
+                <div className="flex flex-col max-w-[70vw] min-w-[120px] items-start"
+                  style={{
+                    background: 'rgba(255,255,255,0.95)',
+                    color: '#222',
+                    borderRadius: 18,
+                    boxShadow: '0 2px 8px #0001',
+                    padding: 16,
+                    marginBottom: 8
+                  }}
+                >
+                  <div className="flex items-center mb-2 gap-2">
+                    <span className="text-xs font-semibold text-muted-foreground">ИИ</span>
+                    <span className="text-xs text-muted-foreground">думает...</span>
+                  </div>
+                  <span className="flex items-center gap-2"><span>Думаю...</span><span className="inline-block w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin align-middle"></span></span>
+                </div>
               </div>
             )}
-            
             <div ref={messagesEndRef} />
           </div>
         </div>
-
-        {/* Input Area */}
-        <div className="glass-effect border-t border-border p-4">
-          <div className="max-w-4xl mx-auto">
-            <SearchModeSelector mode={searchMode} onModeChange={setSearchMode} />
-            <ModelSelector selectedModel={selectedModel} onModelChange={setSelectedModel} />
-            
-            <div className="flex space-x-2 mt-3">
-              <Input
-                value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
-                placeholder="Напишите сообщение..."
-                className="flex-1 bg-muted/50 border-border placeholder:text-muted-foreground focus:border-primary smooth-transition rounded-xl"
-                disabled={isTyping}
-              />
-              <FileUpload
-                userType={userType}
-                onFileSelect={handleFileSelect}
-                selectedFiles={selectedFiles}
-                onRemoveFile={handleRemoveFile}
-              />
-              <Button 
-                onClick={sendMessage}
-                disabled={(!inputValue.trim() && selectedFiles.length === 0) || isTyping}
-                className="bg-gradient-to-r from-blue-500 to-cyan-400 hover:from-blue-600 hover:to-cyan-500 text-white shadow-lg apple-hover smooth-transition rounded-xl px-6"
-              >
-                <Send className="w-4 h-4" />
-              </Button>
-            </div>
-            
-            {userType === 'basic' && (
-              <p className="text-xs text-muted-foreground mt-2">
-                Базовый режим: ограниченные возможности ИИ
-              </p>
-            )}
-            
-            {userType === 'premium' && (
-              <p className="text-xs text-primary mt-2">
-                Pro режим: 130+ моделей, загрузка файлов, {searchMode === 'research' ? 'глубокий анализ' : 'быстрые ответы'}
-              </p>
-            )}
-          </div>
+        <div className="w-full max-w-4xl mx-auto px-2 pb-4 pt-2 sticky bottom-0 bg-background z-10">
+          <form onSubmit={handleSubmit} className="flex gap-2 items-end">
+            <Input
+              value={inputValue}
+              onChange={e => setInputValue(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSubmit(e); } }}
+              placeholder="Введите сообщение..."
+              className="flex-1"
+            />
+            <FileUpload userType={userType} onFileSelect={handleFileSelect} selectedFiles={selectedFiles} onRemoveFile={handleRemoveFile} />
+            <Button type="submit" disabled={isLoading || !model || (!inputValue.trim() && selectedFiles.length === 0)}>
+              <Send />
+            </Button>
+          </form>
         </div>
+      </div>
+      <div className="max-w-4xl mx-auto flex flex-col space-y-4 mb-4 mt-2">
+        <select
+          value={category}
+          onChange={(e) => setCategory(e.target.value)}
+          className="p-2 rounded-lg border border-gray-700 bg-gray-900 text-white font-semibold shadow focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all duration-150"
+        >
+          {CATEGORIES.map((cat) => (
+            <option key={cat.value} value={cat.value}>
+              {cat.label}
+            </option>
+          ))}
+        </select>
+        <select
+          value={model}
+          onChange={(e) => setModel(e.target.value)}
+          className="p-2 rounded-lg border border-blue-700 bg-blue-950 text-white font-semibold shadow focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all duration-150"
+        >
+          <option value="">Выберите модель</option>
+          {availableModels.map((m) => (
+            <option key={m.key} value={m.value}>
+              {getModelLogo(m.value)} {m.label}
+            </option>
+          ))}
+        </select>
       </div>
     </div>
   );
